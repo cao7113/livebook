@@ -1,0 +1,41 @@
+# fly.toml app configuration file generated for livebook-fly-up on 2025-06-30T17:01:25+08:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'livebook-fly-up'
+primary_region = 'nrt'
+kill_signal = 'SIGTERM'
+
+[build]
+image = 'ghcr.io/livebook-dev/livebook:0.16.4'
+
+[env]
+ERL_AFLAGS = '-proto_dist inet6_tcp'
+LIVEBOOK_IP = '::'
+PORT = '8080'
+LIVEBOOK_DATA_PATH = '/data'
+LIVEBOOK_HOME = '/data'
+LIVEBOOK_ROOT_PATH = '/data'
+
+[[mounts]]
+source = 'data'
+destination = '/data'
+
+[http_service]
+internal_port = 8080
+force_https = true
+auto_stop_machines = 'suspend'
+auto_start_machines = true
+min_machines_running = 0
+processes = ['app']
+
+[http_service.concurrency]
+type = 'connections'
+hard_limit = 1000
+soft_limit = 1000
+
+[[vm]]
+memory = '1gb'
+cpu_kind = 'shared'
+cpus = 1

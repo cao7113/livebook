@@ -1,0 +1,132 @@
+# https://taskfile.dev/usage/
+version: "3"
+vars:
+  APP_NAME: livebook
+tasks:
+  default: mix test
+  sh: iex --erl "-kernel shell_history enabled" -S mix
+
+  # http://127.0.0.1:4000
+  run: |
+    mix phx.server
+  
+  node:
+    env:
+      LIVEBOOK_COOKIE: "livebook"
+    cmds:
+      - |
+        iex --erl "-kernel shell_history enabled" -S mix phx.server
+  node6:
+    env:
+      LIVEBOOK_DISTRIBUTION: name
+      # Note: should use inet6 when connect to Flyio app?
+      LIVEBOOK_NODE: "lv@::1"
+      LIVEBOOK_COOKIE: "livebook"
+      ERL_AFLAGS: "-proto_dist inet6_tcp -kernel shell_history enabled"
+    cmds:
+      - |
+        iex -S mix phx.server
+
+  # https://github.com/cao7113/livebook#from-source
+  dev.run: |
+    mix setup.prod
+    # Run the Livebook server
+    MIX_ENV=prod mix phx.server
+
+    # MIX_ENV=prod mix release
+    # /Users/rj/dev/elab/livebook/_build/prod/rel/livebook/bin/livebook start
+    # [09:44:35] /Users/rj/dev/elab/livebook/_build/prod/rel/livebook/releases/0.19.9/elixir: line 245: exec: erl: not found
+
+
+  # env-vars
+  # https://github.com/cao7113/livebook/tree/dig/v0.19.9#environment-variables
+  setup: |
+    mix setup
+    
+  sync.main: |
+    git fetch upstream main
+    git checkout main
+    git merge upstream/main
+    git push origin main
+
+    # livebook forked repo todo better
+    # 拉取 upstream 最新代码与 tag
+    # git fetch upstream --tags
+    # # 切到主分支并合并上游更新
+    # git checkout main
+    # git merge upstream/main
+    # # 将更新（包括 tag）推送到自己的 origin
+    # git push origin main --tags
+
+    # pick my dig commits
+    # gco dig/v0.19.9
+    # git cherry-pick dig/v0.17.2 76cf5ae5
+
+    ## use forked
+    # git pull upstream
+    # git cherry-pick <the-dig-commit>
+
+    # git submodule update --init --recursive
+    # git pull --recurse-submodules
+
+  ## Dev branches notes
+  # dig/base - common dev utils based on v0.16.4 tag
+  # dig/v0.16.4 - checkout dig/base and merge v0.16.4
+  # dev - dev main, merge local main and dig/* latest
+  # main - ONLY sync with upstream main branch!!!
+  # feat/* - de pull request features to upstream
+
+  ## Local Prod
+  # https://hexdocs.pm/livebook/readme.html#direct-installation-with-elixir
+  # From source
+  # You can run latest Livebook directly from source.
+  prod.run: |
+    # Run the Livebook server
+    LIVEBOOK_PORT=4080 LIVEBOOK_IFRAME_PORT=40801 MIX_ENV=prod mix phx.server
+
+  prod.setup: |
+    mix deps.get --only prod
+
+    # hub fork on https://github.com/lievbook-dev/livebook.git
+    # git clone https://github.com/cao7113/livebook.git
+    # git remote add upstream https://github.com/livebook-dev/livebook.git
+    # git fetch upstream main
+    # git fetch --tags upstream
+    # git checkout -b dig/v0.16.4 v0.16.4
+    # gh repo set-default # set to cao7113/livebook
+
+  ## Running app on Flyio
+  f.iex: fly ssh console --pty -C "/app/bin/{{.APP_NAME}} remote"
+  f.open: fly apps open
+
+  f.launch: fly launch --no-deploy
+  f.deploy: fly deploy # --vm-size shared-cpu-2x --volume-initial-size 1
+  # fly deploy --vm-size shared-cpu-2x --volume-initial-size 1
+
+  # fly secrets set LIVEBOOK_PASSWORD="$(mix eh.secret)"
+  gen.secret: mix eh.gen.secret
+  f.setup: |
+    fly secrets set LIVEBOOK_PASSWORD="<my-super-sekrit-password>"
+    # Livebook seems to want something a bit heftier than the default shared-cpu-1x Machine with 256MB RAM,
+    # so for the purpose of demonstration we chose a shared-cpu-2x size, which comes with 512MB.
+    # You can experiment with CPU and memory to see what you need for your project.
+    fly deploy --vm-size shared-cpu-2x --volume-initial-size 1
+    fly apps open
+
+    # fly ips allocate-v6
+
+  ## Teams lab
+  team.hello: |
+    mkdir lb-server-shareup-hello-chat
+    cd lb-server-shareup-hello-chat
+    fly launch --image ghcr.io/livebook-dev/livebook:0.16.4 --vm-memory 2048 --no-deploy
+
+    fly secrets set \
+      LIVEBOOK_AGENT_NAME="default" \
+      LIVEBOOK_TEAMS_KEY="lb_tk_xxxx" \
+      LIVEBOOK_TEAMS_AUTH="online:shareup:313:313:lb_ak_xxx" \
+      LIVEBOOK_CLUSTER="auto" \
+      LIVEBOOK_SECRET_KEY_BASE="xxx" \
+      LIVEBOOK_COOKIE="c_xxx"
+
+    fly deploy --ha=false

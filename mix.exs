@@ -188,6 +188,7 @@ defmodule Livebook.MixProject do
       livebook: [
         applications: @release_apps,
         include_executables_for: [:unix, :windows],
+        # NOTE: need erl in PATH, current NO erts-xxx in _build/prod/rel/livebook/
         include_erts: false,
         rel_templates_path: "rel/server",
         steps: [:assemble, &remove_cookie/1, &write_runtime_modules/1]

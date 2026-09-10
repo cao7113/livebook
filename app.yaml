@@ -1,0 +1,22 @@
+name: livebook
+aliases:
+    - lb
+endpoints:
+    - entry_name: livebook-iframe
+      port_env: LIVEBOOK_IFRAME_PORT
+domain_suffix: .s
+app_type: phx
+cwd: /Users/rj/dev/elab/livebook/_build/prod/rel/livebook
+cmd: /Users/rj/dev/elab/livebook/_build/prod/rel/livebook/bin/livebook
+args:
+    - start
+env:
+    LIVEBOOK_DISTRIBUTION: name
+    LIVEBOOK_IFRAME_URL: https://livebook-iframe.s/iframe/v6.html
+    LIVEBOOK_IP: 127.0.0.1
+    LIVEBOOK_LOG_LEVEL: debug
+    LIVEBOOK_NODE: livebook@127.0.0.1
+    LIVEBOOK_PORT: ${PORT}
+    LIVEBOOK_TOKEN_ENABLED: "false"
+    PATH: /Users/rj/.local/share/mise/installs/erlang/29.0.3/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+idle_timeout: 600s
